@@ -1,0 +1,449 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0d0d0d">
+  <title>Quiz : Containers vs Virtual Machines</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #0d0d0d;
+      color: #fff;
+      font-size: 16px;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      min-width: 320px;
+      margin: 0;
+      padding: 32px 16px 48px;
+      background: #0d0d0d;
+    }
+
+    main {
+      width: 100%;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      margin: 0 0 24px;
+      color: #ff2e88;
+      font-size: clamp(1.8rem, 7vw, 2.5rem);
+      line-height: 1.15;
+      text-align: center;
+      overflow-wrap: anywhere;
+    }
+
+    #result-panel,
+    .question-card {
+      border: 1px solid #292929;
+      border-radius: 18px;
+      background: #171717;
+    }
+
+    #result-panel {
+      margin-bottom: 20px;
+      padding: 22px 18px;
+      text-align: center;
+      scroll-margin-top: 16px;
+    }
+
+    #result-panel[hidden] {
+      display: none;
+    }
+
+    #score {
+      margin: 0;
+      color: #fff;
+      font-size: clamp(2.5rem, 12vw, 4rem);
+      font-weight: 800;
+      line-height: 1.1;
+    }
+
+    #mention {
+      margin: 8px 0 18px;
+      font-size: 1.35rem;
+      font-weight: 750;
+    }
+
+    #quiz-form {
+      display: grid;
+      gap: 16px;
+    }
+
+    #questions {
+      display: grid;
+      gap: 16px;
+    }
+
+    .question-card {
+      min-width: 0;
+      padding: 18px;
+      scroll-margin-top: 16px;
+    }
+
+    .question-card h2 {
+      margin: 0 0 14px;
+      font-size: 1.15rem;
+      line-height: 1.45;
+      overflow-wrap: anywhere;
+    }
+
+    .question-card h2 span {
+      color: #ff2e88;
+    }
+
+    .options {
+      display: grid;
+      gap: 10px;
+    }
+
+    .option {
+      display: flex;
+      min-height: 52px;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 13px 14px;
+      border: 1px solid #393939;
+      border-radius: 12px;
+      background: #202020;
+      cursor: pointer;
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+      transition: border-color 120ms ease, background-color 120ms ease;
+    }
+
+    .option:hover {
+      border-color: #ff2e88;
+    }
+
+    .option input {
+      width: 20px;
+      height: 20px;
+      flex: 0 0 20px;
+      margin: 1px 0 0;
+      accent-color: #ff2e88;
+      cursor: pointer;
+    }
+
+    .option input:focus-visible,
+    button:focus-visible {
+      outline: 3px solid #ff2e88;
+      outline-offset: 3px;
+    }
+
+    .option.is-correct {
+      border-color: #22c55e;
+      background: #22c55e;
+      color: #07140b;
+    }
+
+    .option.is-wrong {
+      border-color: #ef4444;
+      background: #ef4444;
+      color: #190606;
+    }
+
+    .option.is-answer {
+      outline: 2px solid #22c55e;
+      outline-offset: 1px;
+    }
+
+    #warning {
+      margin: 18px 0 0;
+      padding: 14px 16px;
+      border: 1px solid #ff2e88;
+      border-radius: 12px;
+      background: #351323;
+      color: #ffb4d2;
+      line-height: 1.5;
+    }
+
+    #warning[hidden] {
+      display: none;
+    }
+
+    .actions {
+      display: grid;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    button {
+      min-height: 56px;
+      padding: 14px 20px;
+      border: 0;
+      border-radius: 14px;
+      font: inherit;
+      font-size: 1.1rem;
+      font-weight: 750;
+      cursor: pointer;
+      transition: filter 120ms ease, transform 120ms ease;
+    }
+
+    button:hover {
+      filter: brightness(1.1);
+    }
+
+    button:active {
+      transform: scale(0.99);
+    }
+
+    #submit-button {
+      background: #ff2e88;
+      color: #fff;
+    }
+
+    #restart-button {
+      background: #292929;
+      color: #fff;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html {
+        scroll-behavior: auto;
+      }
+
+      *,
+      *::before,
+      *::after {
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Quiz : Containers vs Virtual Machines</h1>
+
+    <section id="result-panel" aria-live="polite" hidden>
+      <p id="score"></p>
+      <p id="mention"></p>
+      <button id="restart-button" type="button">Recommencer</button>
+    </section>
+
+    <form id="quiz-form" novalidate>
+      <div id="questions"></div>
+      <p id="warning" role="alert" hidden>Veuillez répondre à toutes les questions avant de valider.</p>
+      <div class="actions">
+        <button id="submit-button" type="submit">Valider</button>
+      </div>
+    </form>
+  </main>
+
+  <script>
+    const questions = [
+      {
+        question: "Qu'est-ce que la virtualisation ?",
+        options: [
+          "Créer des versions virtuelles des ressources informatiques physiques",
+          "Remplacer définitivement le matériel physique par le Cloud",
+          "Installer plusieurs processeurs physiques dans un ordinateur",
+          "Supprimer le système d'exploitation d'une machine"
+        ],
+        correct: 0
+      },
+      {
+        question: "Quel est le rôle de l'hyperviseur (Hypervisor) ?",
+        options: [
+          "Gérer uniquement les conteneurs Docker",
+          "Créer et gérer les machines virtuelles",
+          "Remplacer le noyau du système hôte",
+          "Exécuter les applications sans système d'exploitation"
+        ],
+        correct: 1
+      },
+      {
+        question: "Qu'est-ce qu'une machine virtuelle (VM) ?",
+        options: [
+          "Une application légère qui partage le noyau de l'hôte",
+          "Un simple fichier de configuration",
+          "Un ordinateur virtuel qui fonctionne comme une véritable machine physique, avec son propre OS, RAM, processeur et stockage virtuels",
+          "Un moteur qui gère les conteneurs"
+        ],
+        correct: 2
+      },
+      {
+        question: "Qu'est-ce qu'un conteneur (Container) ?",
+        options: [
+          "Un ordinateur virtuel complet avec son propre système d'exploitation",
+          "Un type d'hyperviseur Bare Metal",
+          "Un composant matériel du serveur",
+          "Un environnement léger et isolé qui exécute une application avec toutes ses dépendances"
+        ],
+        correct: 3
+      },
+      {
+        question: "Quel est un avantage des conteneurs ?",
+        options: [
+          "Légers, rapides et faciles à déployer et à transporter",
+          "Isolation plus forte que celle des VM",
+          "Chacun possède son propre système d'exploitation complet",
+          "Ils ne dépendent pas du noyau du système hôte"
+        ],
+        correct: 0
+      },
+      {
+        question: "Quel est un avantage des machines virtuelles ?",
+        options: [
+          "Très faible consommation de RAM et de stockage",
+          "Démarrage en moins d'une seconde",
+          "Isolation forte et possibilité d'utiliser différents systèmes d'exploitation",
+          "Gestion très simple même avec un grand nombre de VM"
+        ],
+        correct: 2
+      },
+      {
+        question: "Quel est le type de virtualisation de chaque technologie ?",
+        options: [
+          "VM : au niveau du système d'exploitation — Containers : matérielle",
+          "VM : matérielle (Hardware) — Containers : au niveau du système d'exploitation",
+          "Les deux utilisent une virtualisation matérielle",
+          "Les deux utilisent une virtualisation au niveau du système d'exploitation"
+        ],
+        correct: 1
+      },
+      {
+        question: "Comparez la taille d'une VM et d'un conteneur :",
+        options: [
+          "Les deux font toujours la même taille",
+          "VM : légère (quelques Mo) — Container : lourde (plusieurs Go)",
+          "Aucune des deux n'occupe d'espace de stockage",
+          "VM : lourde (plusieurs Go) — Container : légère (souvent quelques Mo à quelques Go)"
+        ],
+        correct: 3
+      },
+      {
+        question: "Comparez le temps de démarrage :",
+        options: [
+          "VM : lent (secondes à minutes) — Container : rapide (quelques secondes ou moins)",
+          "VM : rapide — Container : lent",
+          "Les deux démarrent instantanément",
+          "Les deux mettent plusieurs heures à démarrer"
+        ],
+        correct: 0
+      },
+      {
+        question: "Quels exemples correspondent à chaque technologie ?",
+        options: [
+          "VM : Docker, Podman — Containers : VMware, VirtualBox",
+          "VM : Docker, Hyper-V — Containers : VirtualBox, Podman",
+          "VM : VMware, VirtualBox, Hyper-V — Containers : Docker, Podman",
+          "Les deux utilisent uniquement Docker"
+        ],
+        correct: 2
+      }
+    ];
+
+    const questionsContainer = document.querySelector("#questions");
+    const form = document.querySelector("#quiz-form");
+    const warning = document.querySelector("#warning");
+    const resultPanel = document.querySelector("#result-panel");
+    const scoreDisplay = document.querySelector("#score");
+    const mentionDisplay = document.querySelector("#mention");
+
+    questionsContainer.innerHTML = questions.map((item, questionIndex) => `
+      <section class="question-card" id="question-${questionIndex + 1}" aria-labelledby="title-${questionIndex}">
+        <h2 id="title-${questionIndex}"><span>Question ${questionIndex + 1} / ${questions.length}</span> — ${item.question}</h2>
+        <div class="options">
+          ${item.options.map((option, optionIndex) => `
+            <label class="option">
+              <input type="radio" name="question-${questionIndex}" value="${optionIndex}">
+              <span>${String.fromCharCode(97 + optionIndex)}) ${option}</span>
+            </label>
+          `).join("")}
+        </div>
+      </section>
+    `).join("");
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+
+      const answers = questions.map((_, index) =>
+        form.querySelector(`input[name="question-${index}"]:checked`)
+      );
+      const firstUnanswered = answers.findIndex((answer) => answer === null);
+
+      if (firstUnanswered !== -1) {
+        warning.hidden = false;
+        document.querySelector(`#question-${firstUnanswered + 1}`).scrollIntoView({
+          behavior: "smooth",
+          block: "center"
+        });
+        return;
+      }
+
+      warning.hidden = true;
+      let score = 0;
+
+      questions.forEach((item, questionIndex) => {
+        const selectedIndex = Number(answers[questionIndex].value);
+        const isCorrect = selectedIndex === item.correct;
+        if (isCorrect) score += 1;
+
+        const card = document.querySelector(`#question-${questionIndex + 1}`);
+        const title = card.querySelector("h2");
+        const resultIcon = document.createElement("span");
+        resultIcon.className = "result-icon";
+        resultIcon.textContent = isCorrect ? " ✔" : " ✘";
+        title.append(resultIcon);
+        card.querySelectorAll("input").forEach((input, optionIndex) => {
+          input.disabled = true;
+          const label = input.closest(".option");
+          if (optionIndex === selectedIndex) {
+            label.classList.add(isCorrect ? "is-correct" : "is-wrong");
+          }
+          if (!isCorrect && optionIndex === item.correct) {
+            label.classList.add("is-answer");
+          }
+        });
+      });
+
+      const result = score <= 3
+        ? { text: "Insuffisant 😕", color: "#ef4444" }
+        : score <= 5
+          ? { text: "Passable 🙂", color: "#f97316" }
+          : score <= 7
+            ? { text: "Très bien 👏", color: "#3b82f6" }
+            : { text: "Excellent 🏆", color: "#22c55e" };
+
+      scoreDisplay.textContent = `${score} / ${questions.length}`;
+      mentionDisplay.textContent = result.text;
+      mentionDisplay.style.color = result.color;
+      resultPanel.hidden = false;
+      document.querySelector("#submit-button").disabled = true;
+      resultPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+
+    document.querySelector("#restart-button").addEventListener("click", () => {
+      form.reset();
+      form.querySelectorAll("input").forEach((input) => {
+        input.disabled = false;
+      });
+      form.querySelectorAll(".option").forEach((label) => {
+        label.classList.remove("is-correct", "is-wrong", "is-answer");
+      });
+      questions.forEach((_, index) => {
+        const title = document.querySelector(`#title-${index}`);
+        title.querySelector(".result-icon").remove();
+      });
+      warning.hidden = true;
+      resultPanel.hidden = true;
+      document.querySelector("#submit-button").disabled = false;
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  </script>
+</body>
+</html>
